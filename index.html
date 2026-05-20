@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CentAI</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 pb-10">
+
+    <div id="schermata-auth" class="fixed inset-0 bg-gray-100 z-50 flex items-center justify-center px-4">
+        <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 w-full max-w-md">
+            <div class="text-center mb-6">
+                <h2 id="auth-titolo" class="text-2xl font-bold tracking-tight text-gray-900">Crea il tuo Account</h2>
+                <p id="auth-sottotitolo" class="text-sm text-gray-400 mt-1">Registrati per iniziare a tracciare le tue spese</p>
+            </div>
+
+            <div class="space-y-4">
+                <div id="box-nome">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nome</label>
+                    <input type="text" id="auth-nome" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Il tuo nome">
+                </div>
+
+                <div id="box-cognome">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cognome</label>
+                    <input type="text" id="auth-cognome" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Il tuo cognome">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Password</label>
+                    <input type="password" id="auth-password" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Scegli o inserisci la password">
+                </div>
+
+                <button type="button" onclick="registraUtenteDiretto()" id="btn-invia-principale" class="w-full bg-blue-600 text-white text-sm font-medium py-3 rounded-xl hover:bg-blue-700 transition shadow-sm mt-2 block text-center">
+                    Registrati
+                </button>
+            </div>
+
+            <div class="flex flex-col items-center space-y-3 mt-6 pt-4 border-t border-gray-100">
+                <button onclick="cambiaModalitaAuth()" id="btn-auth-switch" class="text-sm text-blue-600 font-medium hover:underline">Hai già un account? Accedi</button>
+                <button onclick="recuperaPassword()" id="btn-Password-dimenticata" class="text-xs text-gray-400 hover:underline hidden">Password dimenticata?</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="contenuto-app" class="max-w-md mx-auto px-4 pt-8 hidden">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">CentAI</h1>
+                <p id="saluto-utente" class="text-xs text-gray-400 mt-0.5">Ciao,</p>
+            </div>
+            <div class="space-x-2 flex items-center">
+                <button onclick="configuraBudget()" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-full font-medium shadow-sm">Imposta Budget</button>
+                <button onclick="disconnetti()" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-full font-medium">Esci</button>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+            <p class="text-sm text-gray-500 font-medium">Disponibile Rimasto</p>
+            <p id="rimanente-totale" class="text-3xl font-bold text-gray-900 mt-1">€0.00</p>
+            
+            <div class="w-full bg-gray-100 rounded-full h-2 mt-4 overflow-hidden">
+                <div id="barra-totale" class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
+            </div>
+            
+            <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-50 text-xs text-gray-400">
+                <p id="budget-totale">Budget iniziale: €0.00</p>
+                <p id="entrate-totale" class="text-emerald-600 font-medium">Totale Entrate: +€0.00</p>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-gray-700 to-gray-800 text-white p-4 rounded-xl shadow-sm mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-gray-300 font-medium uppercase tracking-wider">📦 Resoconto Uscite Grandi</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Spese straordinarie / Desideri di questo mese</p>
+                </div>
+                <p id="txt-uscite-grandi" class="text-xl font-bold text-orange-400">€0.00</p>
+            </div>
+        </div>
+
+        <h2 class="text-lg font-bold mb-3">I tuoi Budget Allocati</h2>
+        <div class="space-y-4 mb-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="font-semibold text-gray-700">🏠 Necessità & Abbonamenti (30%)</span>
+                    <span id="txt-necessita" class="text-sm font-medium text-gray-600">€0 / €0</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                    <div id="bar-necessita" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="font-semibold text-gray-700">🎉 Svago & Divertimento (30%)</span>
+                    <span id="txt-svago" class="text-sm font-medium text-gray-600">€0 / €0</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                    <div id="bar-svago" class="bg-purple-500 h-1.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="font-semibold text-gray-700">🐷 Risparmi & Investimenti (40%)</span>
+                    <span id="txt-risparmi" class="text-sm font-medium text-gray-600">€0 / €0</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                    <div id="bar-risparmi" class="bg-emerald-500 h-1.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+            <h3 class="font-bold text-gray-800 mb-2">Simula comando vocale Siri / IA</h3>
+            <p class="text-xs text-gray-400 mb-3">Dici una spesa o un'entrata (Es: "Pezzi bici 90 euro")</p>
+            <input type="text" id="input-siri" placeholder="Es: Speso 90 euro per pezzi della bici" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="processaConIA()" class="w-full mt-3 bg-gray-900 text-white text-sm font-medium py-3 rounded-xl hover:bg-gray-800 transition">Invia all'IA</button>
+        </div>
+
+        <h2 class="text-lg font-bold mb-3">Movimenti del Mese</h2>
+        <div id="lista-spese" class="space-y-2 mb-6">
+            <p id="nessuna-spesa" class="text-sm text-gray-400 text-center py-4">Nessun movimento registrato questo mese.</p>
+        </div>
+
+        <h2 class="text-lg font-bold mb-3">Archivio Mesi Precedenti</h2>
+        <div id="archivio-storico" class="space-y-2">
+            <p id="nessun-archivio" class="text-sm text-gray-400 text-center py-4">Nessun dato nei mesi passati.</p>
+        </div>
+    </div>
+
+    <script>
+        let account = null;
+        let dati = JSON.parse(localStorage.getItem('finanze_ia_v11')) || {
+            budget: 0,
+            movimenti: []
+        };
+        let modalitaLogin = false;
+
+        function caricaStato() {
+            account = JSON.parse(localStorage.getItem('centai_user_v11'));
+            if (account) {
+                modalitaLogin = true;
+                mostraSchermataAccedi();
+            } else {
+                modalitaLogin = false;
+                mostraSchermataRegistrati();
+            }
+        }
+
+        function registraUtenteDiretto() {
+            const n = document.getElementById('auth-nome').value.trim();
+            const c = document.getElementById('auth-cognome').value.trim();
+            const p = document.getElementById('auth-password').value;
+
+            if (modalitaLogin) {
+                if (!account) {
+                    alert("⚠️ Nessun account registrato su questo telefono.");
+                    return;
+                }
+                if (p === account.password) {
+                    avviaApplicazione();
+                } else {
+                    alert("⚠️ Password errata!");
+                }
+            } else {
+                if (!n || !c || !p) {
+                    alert("⚠️ Compila tutti i campi prima di procedere alla registrazione!");
+                    return;
+                }
+                account = { nome: n, cognome: c, password: p };
+                localStorage.setItem('centai_user_v11', JSON.stringify(account));
+                avviaApplicazione();
+            }
+        }
+
+        function recuperaPassword() {
+            if (!account) {
+                alert("⚠️ Nessun account presente nel sistema.");
+                return;
+            }
+            const verificaNome = prompt("Per recuperare le credenziali, inserisci il tuo NOME:");
+            const verificaCognome = prompt("Inserisci il tuo COGNOME:");
+            
+            if (verificaNome && verificaCognome && 
+                verificaNome.trim().toLowerCase() === account.nome.toLowerCase() && 
+                verificaCognome.trim().toLowerCase() === account.cognome.toLowerCase()) {
+                alert(`🔒 GIUSTO! La tua password è: ${account.password}`);
+            } else {
+                alert("⚠️ I dati inseriti non sono corretti.");
+            }
+        }
+
+        function avviaApplicazione() {
+            document.getElementById('schermata-auth').classList.add('hidden');
+            document.getElementById('contenuto-app').classList.remove('hidden');
+            document.getElementById('saluto-utente').innerText = `Ciao, ${account.nome} ${account.cognome}`;
+            aggiornaInterfaccia();
+        }
+
+        function mostraSchermataAccedi() {
+            document.getElementById('auth-titolo').innerText = "Accedi a CentAI";
+            document.getElementById('auth-sottotitolo').innerText = "Digita la tua password personale per entrare";
+            document.getElementById('box-nome').classList.add('hidden');
+            document.getElementById('box-cognome').classList.add('hidden');
+            document.getElementById('btn-invia-principale').innerText = "Accedi";
+            document.getElementById('btn-auth-switch').innerText = "Non hai un account? Registrati";
+            document.getElementById('btn-Password-dimenticata').classList.remove('hidden');
+            document.getElementById('schermata-auth').classList.remove('hidden');
+        }
+
+        function mostraSchermataRegistrati() {
+            document.getElementById('auth-titolo').innerText = "Crea il tuo Account";
+            document.getElementById('auth-sottotitolo').innerText = "Registrati per iniziare a tracciare le tue spese";
+            document.getElementById('box-nome').classList.remove('hidden');
+            document.getElementById('box-cognome').classList.remove('hidden');
+            document.getElementById('btn-invia-principale').innerText = "Registrati";
+            document.getElementById('btn-auth-switch').innerText = "Hai già un account? Accedi";
+            document.getElementById('btn-Password-dimenticata').classList.add('hidden');
+            document.getElementById('schermata-auth').classList.remove('hidden');
+        }
+
+        function cambiaModalitaAuth() {
+            modalitaLogin = !modalitaLogin;
+            if (modalitaLogin) {
+                mostraSchermataAccedi();
+            } else {
+                mostraSchermataRegistrati();
+            }
+        }
+
+        function disconnetti() {
+            modalitaLogin = true;
+            document.getElementById('auth-password').value = "";
+            mostraSchermataAccedi();
+            document.getElementById('schermata-auth').classList.remove('hidden');
+            document.getElementById('contenuto-app').classList.add('hidden');
+        }
+
+        function salvaDati() {
+            localStorage.setItem('finanze_ia_v11', JSON.stringify(dati));
+            aggiornaInterfaccia();
+        }
+
+        function configuraBudget() {
+            const cifra = prompt("Inserisci il tuo budget iniziale per questo mese (€):", dati.budget);
+            if (cifra !== null && !isNaN(cifra) && cifra.trim() !== "") {
+                dati.budget = parseFloat(cifra);
+                salvaDati();
+            }
+        }
+
+        function eliminaMovimento(id) {
+            if(confirm("Vuoi davvero eliminare questo movimento?")) {
+                dati.movimenti.splice(id, 1);
+                salvaDati();
+            }
+        }
+
+        function calcolaSpesoPerCategoriaMeseCorrente(cat) {
+            const adesso = new Date();
+            return dati.movimenti
+                .filter(m => {
+                    const dataM = new Date(m.data);
+                    const diffTempo = Math.abs(adesso - dataM);
+                    const diffGiorni = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+                    return m.tipo === 'spesa' && m.categoria.toLowerCase() === cat.toLowerCase() && diffGiorni <= 30;
+                })
+                .reduce((acc, curr) => acc + curr.importo, 0);
+        }
+
+        function aggiornaInterfaccia() {
+            const b = dati.budget;
+            document.getElementById('budget-totale').innerText = `Budget iniziale: €${b.toFixed(2)}`;
+
+            const limNecessita = b * 0.30;
+            const limSvago = b * 0.30;
+            const limRisparmi = b * 0.40;
+
+            const spesoNecessita = calcolaSpesoPerCategoriaMeseCorrente('necessità');
+            const spesoSvago = calcolaSpesoPerCategoriaMeseCorrente('svago');
+            const spesoRisparmi = calcolaSpesoPerCategoriaMeseCorrente('risparmi');
+            const spesoUsciteGrandi = calcolaSpesoPerCategoriaMeseCorrente('uscita grande');
+
+            document.getElementById('txt-uscite-grandi').innerText = `€${spesoUsciteGrandi.toFixed(2)}`;
+
+            const spesoTotaleMese = spesoNecessita + spesoSvago + spesoRisparmi + spesoUsciteGrandi;
+
+            const adesso = new Date();
+            const totaleEntrateMese = dati.movimenti
+                .filter(m => {
+                    const dataM = new Date(m.data);
+                    const diffTempo = Math.abs(adesso - dataM);
+                    const diffGiorni = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+                    return m.tipo === 'entrata' && diffGiorni <= 30;
+                })
+                .reduce((acc, curr) => acc + curr.importo, 0);
+
+            document.getElementById('entrate-totale').innerText = `Totale Entrate: +€${totaleEntrateMese.toFixed(2)}`;
+
+            document.getElementById('txt-necessita').innerText = `€${spesoNecessita.toFixed(0)} / €${limNecessita.toFixed(0)}`;
+            document.getElementById('txt-svago').innerText = `€${spesoSvago.toFixed(0)} / €${limSvago.toFixed(0)}`;
+            document.getElementById('txt-risparmi').innerText = `€${spesoRisparmi.toFixed(0)} / €${limRisparmi.toFixed(0)}`;
+
+            document.getElementById('bar-necessita').style.width = `${limNecessita > 0 ? Math.min((spesoNecessita / limNecessita) * 100, 100) : 0}%`;
+            document.getElementById('bar-svago').style.width = `${limSvago > 0 ? Math.min((spesoSvago / limSvago) * 100, 100) : 0}%`;
+            document.getElementById('bar-risparmi').style.width = `${limRisparmi > 0 ? Math.min((spesoRisparmi / limRisparmi) * 100, 100) : 0}%`;
+
+            const rimanente = b + totaleEntrateMese - spesoTotaleMese;
+            const cifraRimanenteElement = document.getElementById('rimanente-totale');
+            cifraRimanenteElement.innerText = `€${rimanente.toFixed(2)}`;
+            
+            if (rimanente < 0) {
+                cifraRimanenteElement.className = "text-3xl font-bold text-red-600 mt-1";
+            } else {
+                cifraRimanenteElement.className = "text-3xl font-bold text-gray-900 mt-1";
+            }
+
+            const budgetDisponibileTotale = b + totaleEntrateMese;
+            const percTotale = budgetDisponibileTotale > 0 ? Math.max((rimanente / budgetDisponibileTotale) * 100, 0) : 0;
+            document.getElementById('barra-totale').style.width = `${percTotale}%`;
+            document.getElementById('barra-totale').className = rimanente < 0 ? "bg-red-500 h-2 rounded-full" : "bg-green-500 h-2 rounded-full";
+
+            const listaMese = document.getElementById('lista-spese');
+            const listaArchivio = document.getElementById('archivio-storico');
+
+            listaMese.innerHTML = `<p id="nessuna-spesa" class="text-sm text-gray-400 text-center py-4">Nessun movimento registrato questo mese.</p>`;
+            listaArchivio.innerHTML = `<p id="nessun-archivio" class="text-sm text-gray-400 text-center py-4">Nessun dato nei mesi passati.</p>`;
+
+            let contMese = 0;
+            let contArchivio = 0;
+
+            dati.movimenti.map((m, index) => ({...m, originalIndex: index})).forEach(movimento => {
+                const dataMovimento = new Date(movimento.data);
+                const diffTempo = Math.abs(adesso - dataMovimento);
+                const diffGiorni = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+
+                const div = document.createElement('div');
+                div.className = "bg-white p-3 rounded-xl shadow-xs border border-gray-100 flex justify-between items-center text-sm mb-2";
+                
+                const segno = movimento.tipo === 'entrata' ? '+€' : '-€';
+                const colorePrezzo = movimento.tipo === 'entrata' ? 'text-emerald-500 font-bold' : 'text-red-500 font-bold';
+                
+                let sottoTesto = movimento.categoria;
+                if (movimento.tipo === 'entrata') sottoTesto = 'Entrata Guadagnata';
+                if (movimento.categoria === 'uscita grande') sottoTesto = '📦 Uscita Grande / Straordinaria';
+
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <button onclick="eliminaMovimento(${movimento.originalIndex})" class="text-red-400 hover:text-red-600 font-bold px-1 text-base">✕</button>
+                        <div>
+                            <p class="font-semibold text-gray-800">${movimento.descrizione}</p>
+                            <p class="text-xs text-gray-400 capitalize">${sottoTesto} (${dataMovimento.toLocaleDateString('it-IT')})</p>
+                        </div>
+                    </div>
+                    <span class="${colorePrezzo}">${segno}${movimento.importo.toFixed(2)}</span>
+                `;
+
+                if (diffGiorni > 30) {
+                    if (contArchivio === 0) listaArchivio.innerHTML = "";
+                    contArchivio++;
+                    const mesiFa = Math.floor(diffGiorni / 30);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = "mb-2";
+                    wrapper.innerHTML = `<span class="text-[10px] bg-gray-200 text-gray-500 font-bold px-2 py-0.5 rounded-md inline-block mb-1">${mesiFa} mese/i fa</span>`;
+                    wrapper.appendChild(div);
+                    listaArchivio.insertBefore(wrapper, listaArchivio.firstChild);
+                } else {
+                    if (contMese === 0) listaMese.innerHTML = "";
+                    contMese++;
+                    listaMese.insertBefore(div, listaMese.firstChild);
+                }
+            });
+        }
+
+        function processaConIA() {
+            const testo = document.getElementById('input-siri').value;
+            if(!testo) return;
+
+            const numeri = testo.match(/\d+([.,]\d+)?/);
+            if (!numeri) {
+                alert("L'IA non ha trovato nessun importo numerico nella frase.");
+                return;
+            }
+            const importo = parseFloat(numeri[0].replace(',', '.'));
+            const testoMinuscolo = testo.toLowerCase();
+            
+            let tipo = "spesa"; 
+            let categoria = "svago"; 
+
+            const paroleEntrate = ['entrata', 'stipendio', 'guadagno', 'guadagnati', 'ricevuto', 'ricevuti', 'regalo', 'venduto', 'paga'];
+            const paroleNecessita = ['spesa', 'affitto', 'bolletta', 'luce', 'gas', 'benzina', 'carburante', 'treno', 'medicina', 'dottore', 'supermercato', 'pranzo', 'cena', 'mangiare', 'netflix', 'spotify', 'abbonamento', 'palestra', 'necessità'];
+            const paroleRisparmi = ['risparmio', 'investimento', 'crypto', 'azioni', 'salvadanaio', 'fondo', 'messo via', 'risparmi'];
+            const paroleUsciteGrandi = ['bici', 'bicicletta', 'ruota', 'manubrio', 'cambio', 'pezzi', 'desiderio', 'acquisto grande', 'straordinaria', 'straordinario', 'pc', 'computer', 'motore', 'grande'];
+
+            if (paroleEntrate.some(p => testoMinuscolo.includes(p))) {
+                tipo = "entrata";
+            } else if (paroleUsciteGrandi.some(p => testoMinuscolo.includes(p))) {
+                categoria = "uscita grande"; 
+            } else if (paroleNecessita.some(p => testoMinuscolo.includes(p))) {
+                categoria = "necessità";
+            } else if (paroleRisparmi.some(p => testoMinuscolo.includes(p))) {
+                categoria = "risparmi";
+            }
+
+            let descrizione = testo.replace(numeri[0], '').replace('euro', '').replace('€', '').trim();
+            if(descrizione.length < 2) {
+                descrizione = tipo === 'entrata' ? "Entrata registrata" : "Spesa registrata";
+            }
+
+            dati.movimenti.push({
+                importo: importo,
+                tipo: tipo,
+                categoria: category = categoria,
+                descrizione: descrizione,
+                data: new Date().toISOString()
+            });
+
+            document.getElementById('input-siri').value = ""; 
+            salvaDati();
+        }
+
+        window.onload = caricaStato;
+    </script>
+</body>
+</html>
