@@ -9,378 +9,310 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .toast-notifica { animation: slideUp 0.3s ease-out, fadeOut 0.3s ease-in 2.7s forwards; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-900 pb-10">
 
-    <div id="schermata-auth" class="fixed inset-0 bg-gray-100 z-50 flex items-center justify-center px-4">
-        <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 w-full max-w-md">
-            <div class="text-center mb-6">
-                <h2 id="auth-titolo" class="text-2xl font-bold tracking-tight text-gray-900">Crea il tuo Account</h2>
-                <p id="auth-sottotitolo" class="text-sm text-gray-400 mt-1">Registrati per iniziare a tracciare le tue spese</p>
+    <div id="contenitore-notifiche" class="fixed bottom-5 left-0 right-0 z-50 flex flex-col items-center pointer-events-none px-4 space-y-2"></div>
+
+    <div id="popup-resoconto" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center px-4 hidden">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
+            <div class="text-center mb-4">
+                <span class="text-3xl">📊</span>
+                <h3 class="text-xl font-bold mt-2 text-gray-900">Resoconto Fine Mese</h3>
+                <p id="resoconto-mese-nome" class="text-xs text-gray-400 uppercase tracking-wider font-semibold mt-0.5">Mese Concluso</p>
             </div>
-
-            <div class="space-y-4">
-                <div id="box-nome">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nome</label>
-                    <input type="text" id="auth-nome" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Il tuo nome">
-                </div>
-
-                <div id="box-cognome">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cognome</label>
-                    <input type="text" id="auth-cognome" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Il tuo cognome">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Password</label>
-                    <input type="password" id="auth-password" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Scegli o inserisci la password">
-                </div>
-
-                <button type="button" onclick="registraUtenteDiretto()" id="btn-invia-principale" class="w-full bg-blue-600 text-white text-sm font-medium py-3 rounded-xl hover:bg-blue-700 transition shadow-sm mt-2 block text-center">
-                    Registrati
-                </button>
+            <div class="space-y-3 my-4 bg-gray-50 p-4 rounded-xl text-sm text-gray-700">
+                <p class="font-bold border-b pb-1 text-gray-800">💳 BUDGET CONTO:</p>
+                <div class="flex justify-between"><span>Speso Totale:</span><span id="res-conto-speso" class="font-semibold">€0.00</span></div>
+                <div class="flex justify-between border-b pb-2"><span>Rimasto/Risparmiato:</span><span id="res-conto-rimasto" class="font-semibold">€0.00</span></div>
+                
+                <p class="font-bold pt-1 text-gray-800">👛 PORTAFOGLIO CONTANTI:</p>
+                <div class="flex justify-between"><span>Speso Totale:</span><span id="res-port-speso" class="font-semibold">€0.00</span></div>
+                <div class="flex justify-between"><span>Rimasto in tasca:</span><span id="res-port-rimasto" class="font-semibold">€0.00</span></div>
             </div>
-
-            <div class="flex flex-col items-center space-y-3 mt-6 pt-4 border-t border-gray-100">
-                <button onclick="cambiaModalitaAuth()" id="btn-auth-switch" class="text-sm text-blue-600 font-medium hover:underline">Hai già un account? Accedi</button>
-                <button onclick="recuperaPassword()" id="btn-Password-dimenticata" class="text-xs text-gray-400 hover:underline hidden">Password dimenticata?</button>
-            </div>
+            <p class="text-xs text-center text-gray-400 px-2 mb-4">I dati verranno salvati in archivio e i contatori mensili azzerati.</p>
+            <button onclick="chiudiEArchiviaMese()" class="w-full bg-blue-600 text-white font-medium py-3 rounded-xl hover:bg-blue-700 transition shadow-md">Inizia Nuovo Mese</button>
         </div>
     </div>
 
-    <div id="contenuto-app" class="max-w-md mx-auto px-4 pt-8 hidden">
-        <div class="flex justify-between items-center mb-6">
+    <div id="contenuto-app" class="max-w-md mx-auto px-4 pt-8">
+        <div class="flex justify-between items-center mb-4">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight">CentAI</h1>
-                <p id="saluto-utente" class="text-xs text-gray-400 mt-0.5">Ciao,</p>
-            </div>
-            <div class="space-x-2 flex items-center">
-                <button onclick="configuraBudget()" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-full font-medium shadow-sm">Imposta Budget</button>
-                <button onclick="disconnetti()" class="text-xs bg-gray-200 text-gray-600 px-3 py-1.5 rounded-full font-medium">Esci</button>
+                <p class="text-xs text-gray-400 mt-0.5">Gestione Finanze Personali</p>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-            <p class="text-sm text-gray-500 font-medium">Disponibile Rimasto</p>
-            <p id="rimanente-totale" class="text-3xl font-bold text-gray-900 mt-1">€0.00</p>
-            
-            <div class="w-full bg-gray-100 rounded-full h-2 mt-4 overflow-hidden">
-                <div id="barra-totale" class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
+        <div class="grid grid-cols-2 gap-2 bg-gray-200 p-1 rounded-xl mb-6">
+            <button id="tab-budget" onclick="cambiaSchermata('budget')" class="py-2.5 text-sm font-bold rounded-lg bg-white text-gray-900 shadow-xs transition">📊 Budget</button>
+            <button id="tab-portafoglio" onclick="cambiaSchermata('portafoglio')" class="py-2.5 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 transition">👛 Portafoglio</button>
+        </div>
+
+        <div id="sezione-budget" class="block">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Disponibile Rimasto (Conto)</p>
+                        <p id="rimanente-totale" class="text-3xl font-bold text-gray-900 mt-1">€0.00</p>
+                    </div>
+                    <button onclick="configuraBudget('budget')" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-full font-medium shadow-sm">Imposta Budget</button>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2 mt-4 overflow-hidden">
+                    <div id="barra-totale" class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
+                </div>
+                <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-50 text-xs text-gray-400">
+                    <p id="budget-totale">Budget iniziale: €0.00</p>
+                </div>
             </div>
-            
-            <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-50 text-xs text-gray-400">
-                <p id="budget-totale">Budget iniziale: €0.00</p>
-                <p id="entrate-totale" class="text-emerald-600 font-medium">Totale Entrate: +€0.00</p>
+
+            <div class="bg-gradient-to-r from-gray-700 to-gray-800 text-white p-4 rounded-xl shadow-sm mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-xs text-gray-300 font-medium uppercase tracking-wider">📦 Resoconto Uscite Grandi</p>
+                    </div>
+                    <p id="txt-uscite-grandi" class="text-xl font-bold text-orange-400">€0.00</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-1"><span class="font-semibold text-gray-700">🏠 Necessità & Abbonamenti (30%)</span><span id="txt-necessita" class="text-sm font-medium text-gray-600">€0 / €0</span></div>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden"><div id="bar-necessita" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%"></div></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-1"><span class="font-semibold text-gray-700">🎉 Svago & Divertimento (30%)</span><span id="txt-svago" class="text-sm font-medium text-gray-600">€0 / €0</span></div>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden"><div id="bar-svago" class="bg-purple-500 h-1.5 rounded-full" style="width: 0%"></div></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-1"><span class="font-semibold text-gray-700">🐷 Risparmi & Investimenti (40%)</span><span id="txt-risparmi" class="text-sm font-medium text-gray-600">€0 / €0</span></div>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden"><div id="bar-risparmi" class="bg-emerald-500 h-1.5 rounded-full" style="width: 0%"></div></div>
+                </div>
             </div>
         </div>
 
-        <div class="bg-gradient-to-r from-gray-700 to-gray-800 text-white p-4 rounded-xl shadow-sm mb-6">
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-xs text-gray-300 font-medium uppercase tracking-wider">📦 Resoconto Uscite Grandi</p>
-                    <p class="text-xs text-gray-400 mt-0.5">Spese straordinarie / Desideri di questo mese</p>
+        <div id="sezione-portafoglio" class="hidden">
+            <div class="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-6 rounded-2xl shadow-md mb-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-amber-100 font-medium">Contanti Rimasti nel Portafoglio</p>
+                        <p id="portafoglio-rimanente" class="text-3xl font-bold mt-1">€0.00</p>
+                    </div>
+                    <button onclick="configuraBudget('portafoglio')" class="text-xs bg-white text-orange-600 px-3 py-1.5 rounded-full font-bold shadow-sm">Carica Contanti</button>
                 </div>
-                <p id="txt-uscite-grandi" class="text-xl font-bold text-orange-400">€0.00</p>
-            </div>
-        </div>
-
-        <h2 class="text-lg font-bold mb-3">I tuoi Budget Allocati</h2>
-        <div class="space-y-4 mb-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="font-semibold text-gray-700">🏠 Necessità & Abbonamenti (30%)</span>
-                    <span id="txt-necessita" class="text-sm font-medium text-gray-600">€0 / €0</span>
-                </div>
-                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
-                    <div id="bar-necessita" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%"></div>
-                </div>
+                <div class="w-full bg-white bg-opacity-20 rounded-full h-2 mt-4 overflow-hidden"><div id="barra-portafoglio" class="bg-white h-2 rounded-full" style="width: 100%"></div></div>
             </div>
 
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="font-semibold text-gray-700">🎉 Svago & Divertimento (30%)</span>
-                    <span id="txt-svago" class="text-sm font-medium text-gray-600">€0 / €0</span>
+            <div class="space-y-4 mb-6">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-1"><span class="font-semibold text-gray-700">🏠 Necessità Contanti (30%)</span><span id="txt-port-necessita" class="text-sm font-medium text-gray-600">€0 / €0</span></div>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden"><div id="bar-port-necessita" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%"></div></div>
                 </div>
-                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
-                    <div id="bar-svago" class="bg-purple-500 h-1.5 rounded-full" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="font-semibold text-gray-700">🐷 Risparmi & Investimenti (40%)</span>
-                    <span id="txt-risparmi" class="text-sm font-medium text-gray-600">€0 / €0</span>
-                </div>
-                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
-                    <div id="bar-risparmi" class="bg-emerald-500 h-1.5 rounded-full" style="width: 0%"></div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-1"><span class="font-semibold text-gray-700">🎉 Svago Contanti (30%)</span><span id="txt-port-svago" class="text-sm font-medium text-gray-600">€0 / €0</span></div>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden"><div id="bar-port-svago" class="bg-purple-500 h-1.5 rounded-full" style="width: 0%"></div></div>
                 </div>
             </div>
         </div>
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
-            <h3 class="font-bold text-gray-800 mb-2">Simula comando vocale Siri / IA</h3>
-            <p class="text-xs text-gray-400 mb-3">Dici una spesa o un'entrata (Es: "Pezzi bici 90 euro")</p>
-            <input type="text" id="input-siri" placeholder="Es: Speso 90 euro per pezzi della bici" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button onclick="processaConIA()" class="w-full mt-3 bg-gray-900 text-white text-sm font-medium py-3 rounded-xl hover:bg-gray-800 transition">Invia all'IA</button>
+            <input type="text" id="input-siri" placeholder="Es: Spesi 10 euro portafoglio per mc" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none">
+            <button onclick="processaConIA()" class="w-full mt-3 bg-gray-900 text-white text-sm font-medium py-3 rounded-xl">Invia all'IA</button>
         </div>
 
-        <h2 class="text-lg font-bold mb-3">Movimenti del Mese</h2>
-        <div id="lista-spese" class="space-y-2 mb-6">
-            <p id="nessuna-spesa" class="text-sm text-gray-400 text-center py-4">Nessun movimento registrato questo mese.</p>
-        </div>
-
+        <h2 id="titolo-lista-movimenti" class="text-lg font-bold mb-3">Movimenti del Mese</h2>
+        <div id="lista-spese" class="space-y-2 mb-6"></div>
         <h2 class="text-lg font-bold mb-3">Archivio Mesi Precedenti</h2>
-        <div id="archivio-storico" class="space-y-2">
-            <p id="nessun-archivio" class="text-sm text-gray-400 text-center py-4">Nessun dato nei mesi passati.</p>
-        </div>
+        <div id="archivio-storico" class="space-y-2 mb-6"></div>
     </div>
 
     <script>
-        let account = null;
-        let dati = JSON.parse(localStorage.getItem('finanze_ia_v11')) || {
-            budget: 0,
-            movimenti: []
-        };
-        let modalitaLogin = false;
+        let vistaCorrente = 'budget'; 
+        let dati = JSON.parse(localStorage.getItem('finanze_ia_v16')) || { budget: 0, budgetPortafoglio: 0, ultimoMeseTracciato: new Date().getMonth(), movimenti: [] };
 
-        function caricaStato() {
-            account = JSON.parse(localStorage.getItem('centai_user_v11'));
-            if (account) {
-                modalitaLogin = true;
-                mostraSchermataAccedi();
-            } else {
-                modalitaLogin = false;
-                mostraSchermataRegistrati();
+        function parla(testo) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(testo);
+                utterance.lang = 'it-IT';
+                utterance.rate = 1.0; 
+                window.speechSynthesis.speak(utterance);
             }
         }
 
-        function registraUtenteDiretto() {
-            const n = document.getElementById('auth-nome').value.trim();
-            const c = document.getElementById('auth-cognome').value.trim();
-            const p = document.getElementById('auth-password').value;
+        function mostraNotificaConferma(messaggio, tipoDest) {
+            const container = document.getElementById('contenitore-notifiche');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast-notifica ${tipoDest === 'portafoglio' ? 'bg-amber-600' : 'bg-gray-900'} text-white px-5 py-3 rounded-xl shadow-lg font-medium text-sm mb-2 flex items-center space-x-2`;
+            toast.innerHTML = `<span>✅</span> <span>${messaggio}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
 
-            if (modalitaLogin) {
-                if (!account) {
-                    alert("⚠️ Nessun account registrato su questo telefono.");
-                    return;
-                }
-                if (p === account.password) {
-                    avviaApplicazione();
-                } else {
-                    alert("⚠️ Password errata!");
-                }
-            } else {
-                if (!n || !c || !p) {
-                    alert("⚠️ Compila tutti i campi prima di procedere alla registrazione!");
-                    return;
-                }
-                account = { nome: n, cognome: c, password: p };
-                localStorage.setItem('centai_user_v11', JSON.stringify(account));
-                avviaApplicazione();
+        function controllaFineMese() {
+            const meseAttuale = new Date().getMonth();
+            if (dati.ultimoMeseTracciato !== undefined && dati.ultimoMeseTracciato !== meseAttuale) {
+                const popup = document.getElementById('popup-resoconto');
+                if (popup) popup.classList.remove('hidden');
             }
         }
 
-        function recuperaPassword() {
-            if (!account) {
-                alert("⚠️ Nessun account presente nel sistema.");
-                return;
+        function chiudiEArchiviaMese() {
+            dati.ultimoMeseTracciato = new Date().getMonth();
+            dati.budget = 0; dati.budgetPortafoglio = 0; dati.movimenti = []; salvaDati();
+            const popup = document.getElementById('popup-resoconto');
+            if (popup) popup.classList.add('hidden');
+        }
+
+        function inizializzaApp() {
+            if (dati && dati.movimenti && Array.isArray(dati.movimenti)) {
+                dati.movimenti.forEach(m => {
+                    if (m && m.categoria) {
+                        m.categoria = m.categoria.toLowerCase().trim();
+                        if (m.categoria === 'necessita') m.categoria = 'necessità';
+                    } else if (m) {
+                        m.categoria = 'svago';
+                    }
+                });
+            } else {
+                dati = { budget: 0, budgetPortafoglio: 0, ultimoMeseTracciato: new Date().getMonth(), movimenti: [] };
             }
-            const verificaNome = prompt("Per recuperare le credenziali, inserisci il tuo NOME:");
-            const verificaCognome = prompt("Inserisci il tuo COGNOME:");
+            localStorage.setItem('finanze_ia_v16', JSON.stringify(dati));
+
+            cambiaSchermata('budget');
+            controllaFineMese();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            let comandoSiri = urlParams.get('siri');
+            if (comandoSiri) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+                setTimeout(() => { 
+                    document.getElementById('input-siri').value = decodeURIComponent(comandoSiri);
+                    processaConIA(); 
+                }, 400);
+            }
+        }
+
+        function cambiaSchermata(tipo) {
+            vistaCorrente = tipo;
+            const sezB = document.getElementById('sezione-budget');
+            const sezP = document.getElementById('sezione-portafoglio');
+            if (sezB) sezB.classList.toggle('hidden', tipo !== 'budget');
+            if (sezP) sezP.classList.toggle('hidden', tipo === 'budget');
             
-            if (verificaNome && verificaCognome && 
-                verificaNome.trim().toLowerCase() === account.nome.toLowerCase() && 
-                verificaCognome.trim().toLowerCase() === account.cognome.toLowerCase()) {
-                alert(`🔒 GIUSTO! La tua password è: ${account.password}`);
+            const btnB = document.getElementById('tab-budget');
+            const btnP = document.getElementById('tab-portafoglio');
+            if(tipo === 'budget') {
+                if (btnB) btnB.className = "py-2.5 text-sm font-bold rounded-lg bg-white text-gray-900 shadow-xs transition";
+                if (btnP) btnP.className = "py-2.5 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 transition";
             } else {
-                alert("⚠️ I dati inseriti non sono corretti.");
+                if (btnP) btnP.className = "py-2.5 text-sm font-bold rounded-lg bg-white text-orange-600 shadow-xs transition";
+                if (btnB) btnB.className = "py-2.5 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 transition";
             }
-        }
-
-        function avviaApplicazione() {
-            document.getElementById('schermata-auth').classList.add('hidden');
-            document.getElementById('contenuto-app').classList.remove('hidden');
-            document.getElementById('saluto-utente').innerText = `Ciao, ${account.nome} ${account.cognome}`;
             aggiornaInterfaccia();
         }
 
-        function mostraSchermataAccedi() {
-            document.getElementById('auth-titolo').innerText = "Accedi a CentAI";
-            document.getElementById('auth-sottotitolo').innerText = "Digita la tua password personale per entrare";
-            document.getElementById('box-nome').classList.add('hidden');
-            document.getElementById('box-cognome').classList.add('hidden');
-            document.getElementById('btn-invia-principale').innerText = "Accedi";
-            document.getElementById('btn-auth-switch').innerText = "Non hai un account? Registrati";
-            document.getElementById('btn-Password-dimenticata').classList.remove('hidden');
-            document.getElementById('schermata-auth').classList.remove('hidden');
+        function salvaDati() { localStorage.setItem('finanze_ia_v16', JSON.stringify(dati)); aggiornaInterfaccia(); }
+
+        function configuraBudget(tipo) {
+            const cifra = prompt("Inserisci budget (€):");
+            if (cifra && !isNaN(cifra)) { if(tipo==='budget') dati.budget = parseFloat(cifra); else dati.budgetPortafoglio = parseFloat(cifra); salvaDati(); }
         }
 
-        function mostraSchermataRegistrati() {
-            document.getElementById('auth-titolo').innerText = "Crea il tuo Account";
-            document.getElementById('auth-sottotitolo').innerText = "Registrati per iniziare a tracciare le tue spese";
-            document.getElementById('box-nome').classList.remove('hidden');
-            document.getElementById('box-cognome').classList.remove('hidden');
-            document.getElementById('btn-invia-principale').innerText = "Registrati";
-            document.getElementById('btn-auth-switch').innerText = "Hai già un account? Accedi";
-            document.getElementById('btn-Password-dimenticata').classList.add('hidden');
-            document.getElementById('schermata-auth').classList.remove('hidden');
-        }
+        function idElimina(id) { if(confirm("Eliminare?")) { dati.movimenti.splice(id, 1); salvaDati(); } }
 
-        function cambiaModalitaAuth() {
-            modalitaLogin = !modalitaLogin;
-            if (modalitaLogin) {
-                mostraSchermataAccedi();
-            } else {
-                mostraSchermataRegistrati();
-            }
-        }
-
-        function disconnetti() {
-            modalitaLogin = true;
-            document.getElementById('auth-password').value = "";
-            mostraSchermataAccedi();
-            document.getElementById('schermata-auth').classList.remove('hidden');
-            document.getElementById('contenuto-app').classList.add('hidden');
-        }
-
-        function salvaDati() {
-            localStorage.setItem('finanze_ia_v11', JSON.stringify(dati));
-            aggiornaInterfaccia();
-        }
-
-        function configuraBudget() {
-            const cifra = prompt("Inserisci il tuo budget iniziale per questo mese (€):", dati.budget);
-            if (cifra !== null && !isNaN(cifra) && cifra.trim() !== "") {
-                dati.budget = parseFloat(cifra);
-                salvaDati();
-            }
-        }
-
-        function eliminaMovimento(id) {
-            if(confirm("Vuoi davvero eliminare questo movimento?")) {
-                dati.movimenti.splice(id, 1);
-                salvaDati();
-            }
-        }
-
-        function calcolaSpesoPerCategoriaMeseCorrente(cat) {
-            const adesso = new Date();
-            return dati.movimenti
-                .filter(m => {
-                    const dataM = new Date(m.data);
-                    const diffTempo = Math.abs(adesso - dataM);
-                    const diffGiorni = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
-                    return m.tipo === 'spesa' && m.categoria.toLowerCase() === cat.toLowerCase() && diffGiorni <= 30;
-                })
-                .reduce((acc, curr) => acc + curr.importo, 0);
+        function calcolaSpesoPerCategoriaMeseCorrente(cat, destinazione = 'budget') {
+            if (!dati.movimenti) return 0;
+            return dati.movimenti.filter(m => {
+                if (!m) return false;
+                const destM = m.destinazione || 'budget';
+                const catM = m.categoria ? m.categoria.toLowerCase().trim() : '';
+                const targetCat = cat.toLowerCase().trim();
+                return m.tipo === 'spesa' && destM === destinazione && (catM === targetCat || (targetCat === 'necessità' && catM === 'necessita'));
+            }).reduce((acc, curr) => acc + curr.importo, 0);
         }
 
         function aggiornaInterfaccia() {
-            const b = dati.budget;
-            document.getElementById('budget-totale').innerText = `Budget iniziale: €${b.toFixed(2)}`;
-
-            const limNecessita = b * 0.30;
-            const limSvago = b * 0.30;
-            const limRisparmi = b * 0.40;
-
-            const spesoNecessita = calcolaSpesoPerCategoriaMeseCorrente('necessità');
-            const spesoSvago = calcolaSpesoPerCategoriaMeseCorrente('svago');
-            const spesoRisparmi = calcolaSpesoPerCategoriaMeseCorrente('risparmi');
-            const spesoUsciteGrandi = calcolaSpesoPerCategoriaMeseCorrente('uscita grande');
-
-            document.getElementById('txt-uscite-grandi').innerText = `€${spesoUsciteGrandi.toFixed(2)}`;
-
-            const spesoTotaleMese = spesoNecessita + spesoSvago + spesoRisparmi + spesoUsciteGrandi;
-
-            const adesso = new Date();
-            const totaleEntrateMese = dati.movimenti
-                .filter(m => {
-                    const dataM = new Date(m.data);
-                    const diffTempo = Math.abs(adesso - dataM);
-                    const diffGiorni = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
-                    return m.tipo === 'entrata' && diffGiorni <= 30;
-                })
-                .reduce((acc, curr) => acc + curr.importo, 0);
-
-            document.getElementById('entrate-totale').innerText = `Totale Entrate: +€${totaleEntrateMese.toFixed(2)}`;
-
-            document.getElementById('txt-necessita').innerText = `€${spesoNecessita.toFixed(0)} / €${limNecessita.toFixed(0)}`;
-            document.getElementById('txt-svago').innerText = `€${spesoSvago.toFixed(0)} / €${limSvago.toFixed(0)}`;
-            document.getElementById('txt-risparmi').innerText = `€${spesoRisparmi.toFixed(0)} / €${limRisparmi.toFixed(0)}`;
-
-            document.getElementById('bar-necessita').style.width = `${limNecessita > 0 ? Math.min((spesoNecessita / limNecessita) * 100, 100) : 0}%`;
-            document.getElementById('bar-svago').style.width = `${limSvago > 0 ? Math.min((spesoSvago / limSvago) * 100, 100) : 0}%`;
-            document.getElementById('bar-risparmi').style.width = `${limRisparmi > 0 ? Math.min((spesoRisparmi / limRisparmi) * 100, 100) : 0}%`;
-
-            const rimanente = b + totaleEntrateMese - spesoTotaleMese;
-            const cifraRimanenteElement = document.getElementById('rimanente-totale');
-            cifraRimanenteElement.innerText = `€${rimanente.toFixed(2)}`;
+            const bConto = dati.budget || 0; const bPort = dati.budgetPortafoglio || 0;
+            const spesoB_Nec = calcolaSpesoPerCategoriaMeseCorrente('necessità', 'budget');
+            const spesoB_Sva = calcolaSpesoPerCategoriaMeseCorrente('svago', 'budget');
+            const spesoB_UscGrandi = calcolaSpesoPerCategoriaMeseCorrente('uscita grande', 'budget');
             
-            if (rimanente < 0) {
-                cifraRimanenteElement.className = "text-3xl font-bold text-red-600 mt-1";
-            } else {
-                cifraRimanenteElement.className = "text-3xl font-bold text-gray-900 mt-1";
-            }
+            const rimConto = bConto - (spesoB_Nec + spesoB_Sva + spesoB_UscGrandi);
+            
+            const elRimTot = document.getElementById('rimanente-totale');
+            const elBudTot = document.getElementById('budget-totale');
+            const elUscGra = document.getElementById('txt-uscite-grandi');
+            if (elRimTot) elRimTot.innerText = `€${rimConto.toFixed(2)}`;
+            if (elBudTot) elBudTot.innerText = `Budget iniziale: €${bConto.toFixed(2)}`;
+            if (elUscGra) elUscGra.innerText = `€${spesoB_UscGrandi.toFixed(2)}`;
+            
+            const limB_Nec = bConto * 0.30; const limB_Sva = bConto * 0.30;
+            const elTxtNec = document.getElementById('txt-necessita');
+            const elTxtSva = document.getElementById('txt-svago');
+            if (elTxtNec) elTxtNec.innerText = `€${spesoB_Nec.toFixed(0)} / €${limB_Nec.toFixed(0)}`;
+            if (elTxtSva) elTxtSva.innerText = `€${spesoB_Sva.toFixed(0)} / €${limB_Sva.toFixed(0)}`;
+            
+            const barNec = document.getElementById('bar-necessita');
+            const barSva = document.getElementById('bar-svago');
+            if (barNec) barNec.style.width = `${limB_Nec > 0 ? Math.min((spesoB_Nec / limB_Nec) * 100, 100) : 0}%`;
+            if (barSva) barSva.style.width = `${limB_Sva > 0 ? Math.min((spesoB_Sva / limB_Sva) * 100, 100) : 0}%`;
+            
+            const totaleSpesoB = spesoB_Nec + spesoB_Sva + spesoB_UscGrandi;
+            const barraTot = document.getElementById('barra-totale');
+            if (barraTot) barraTot.style.width = `${bConto > 0 ? Math.max(0, 100 - ((totaleSpesoB / bConto) * 100)) : 0}%`;
+            
+            const spesoP_Nec = calcolaSpesoPerCategoriaMeseCorrente('necessità', 'portafoglio');
+            const spesoP_Sva = calcolaSpesoPerCategoriaMeseCorrente('svago', 'portafoglio');
+            const rimPort = bPort - (spesoP_Nec + spesoP_Sva);
+            
+            const elPortRim = document.getElementById('portafoglio-rimanente');
+            if (elPortRim) elPortRim.innerText = `€${rimPort.toFixed(2)}`;
+            
+            const limP_Nec = bPort * 0.30; const limP_Sva = bPort * 0.30;
+            const elTxtPNec = document.getElementById('txt-port-necessita');
+            const elTxtPSva = document.getElementById('txt-port-svago');
+            if (elTxtPNec) elTxtPNec.innerText = `€${spesoP_Nec.toFixed(0)} / €${limP_Nec.toFixed(0)}`;
+            if (elTxtPSva) elTxtPSva.innerText = `€${spesoP_Sva.toFixed(0)} / €${limP_Sva.toFixed(0)}`;
+            
+            const barPNec = document.getElementById('bar-port-necessita');
+            const barPSva = document.getElementById('bar-port-svago');
+            if (barPNec) barPNec.style.width = `${limP_Nec > 0 ? Math.min((spesoP_Nec / limP_Nec) * 100, 100) : 0}%`;
+            if (barPSva) barPSva.style.width = `${limP_Sva > 0 ? Math.min((spesoP_Sva / limP_Sva) * 100, 100) : 0}%`;
+            
+            const barraPort = document.getElementById('barra-portafoglio');
+            if (barraPort) barraPort.style.width = `${bPort > 0 ? Math.max(0, (rimPort / bPort) * 100) : 0}%`;
 
-            const budgetDisponibileTotale = b + totaleEntrateMese;
-            const percTotale = budgetDisponibileTotale > 0 ? Math.max((rimanente / budgetDisponibileTotale) * 100, 0) : 0;
-            document.getElementById('barra-totale').style.width = `${percTotale}%`;
-            document.getElementById('barra-totale').className = rimanente < 0 ? "bg-red-500 h-2 rounded-full" : "bg-green-500 h-2 rounded-full";
-
-            const listaMese = document.getElementById('lista-spese');
-            const listaArchivio = document.getElementById('archivio-storico');
-
-            listaMese.innerHTML = `<p id="nessuna-spesa" class="text-sm text-gray-400 text-center py-4">Nessun movimento registrato questo mese.</p>`;
-            listaArchivio.innerHTML = `<p id="nessun-archivio" class="text-sm text-gray-400 text-center py-4">Nessun dato nei mesi passati.</p>`;
-
-            let contMese = 0;
-            let contArchivio = 0;
-
-            dati.movimenti.map((m, index) => ({...m, originalIndex: index})).forEach(movimento => {
-                const dataMovimento = new Date(movimento.data);
-                const diffTempo = Math.abs(adesso - dataMovimento);
-                const diffGiorni = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
-
+            const listaMese = document.getElementById('lista-spese'); 
+            if (!listaMese) return;
+            listaMese.innerHTML = "";
+            dati.movimenti.forEach((movimento, index) => {
+                if (!movimento) return;
+                if ((movimento.destinazione || 'budget') !== vistaCorrente) return;
                 const div = document.createElement('div');
                 div.className = "bg-white p-3 rounded-xl shadow-xs border border-gray-100 flex justify-between items-center text-sm mb-2";
                 
                 const segno = movimento.tipo === 'entrata' ? '+€' : '-€';
                 const colorePrezzo = movimento.tipo === 'entrata' ? 'text-emerald-500 font-bold' : 'text-red-500 font-bold';
-                
-                let sottoTesto = movimento.categoria;
-                if (movimento.tipo === 'entrata') sottoTesto = 'Entrata Guadagnata';
-                if (movimento.categoria === 'uscita grande') sottoTesto = '📦 Uscita Grande / Straordinaria';
 
-                div.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <button onclick="eliminaMovimento(${movimento.originalIndex})" class="text-red-400 hover:text-red-600 font-bold px-1 text-base">✕</button>
-                        <div>
-                            <p class="font-semibold text-gray-800">${movimento.descrizione}</p>
-                            <p class="text-xs text-gray-400 capitalize">${sottoTesto} (${dataMovimento.toLocaleDateString('it-IT')})</p>
-                        </div>
-                    </div>
-                    <span class="${colorePrezzo}">${segno}${movimento.importo.toFixed(2)}</span>
-                `;
-
-                if (diffGiorni > 30) {
-                    if (contArchivio === 0) listaArchivio.innerHTML = "";
-                    contArchivio++;
-                    const mesiFa = Math.floor(diffGiorni / 30);
-                    const wrapper = document.createElement('div');
-                    wrapper.className = "mb-2";
-                    wrapper.innerHTML = `<span class="text-[10px] bg-gray-200 text-gray-500 font-bold px-2 py-0.5 rounded-md inline-block mb-1">${mesiFa} mese/i fa</span>`;
-                    wrapper.appendChild(div);
-                    listaArchivio.insertBefore(wrapper, listaArchivio.firstChild);
-                } else {
-                    if (contMese === 0) listaMese.innerHTML = "";
-                    contMese++;
-                    listaMese.insertBefore(div, listaMese.firstChild);
+                let dataFormattata = "";
+                if (movimento.data) {
+                    const d = new Date(movimento.data);
+                    dataFormattata = ` <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded ml-1">${d.getDate()}/${d.getMonth()+1}</span>`;
                 }
+
+                div.innerHTML = `<div><button onclick="idElimina(${index})" class="text-red-500 mr-2">✕</button><b>${movimento.descrizione}</b>${dataFormattata} <span class="text-xs text-gray-400">(${movimento.categoria})</span></div><span class="${colorePrezzo}">${segno}${movimento.importo.toFixed(2)}</span>`;
+                listaMese.insertBefore(div, listaMese.firstChild);
             });
         }
 
         function processaConIA() {
-            const testo = document.getElementById('input-siri').value;
+            const inputElement = document.getElementById('input-siri');
+            if (!inputElement) return;
+            const testo = inputElement.value;
             if(!testo) return;
 
             const numeri = testo.match(/\d+([.,]\d+)?/);
@@ -393,40 +325,62 @@
             
             let tipo = "spesa"; 
             let categoria = "svago"; 
+            let destinazioneIA = vistaCorrente; 
 
             const paroleEntrate = ['entrata', 'stipendio', 'guadagno', 'guadagnati', 'ricevuto', 'ricevuti', 'regalo', 'venduto', 'paga'];
-            const paroleNecessita = ['spesa', 'affitto', 'bolletta', 'luce', 'gas', 'benzina', 'carburante', 'treno', 'medicina', 'dottore', 'supermercato', 'pranzo', 'cena', 'mangiare', 'netflix', 'spotify', 'abbonamento', 'palestra', 'necessità'];
+            const parolePortafoglio = ['portafoglio', 'contanti', 'mano', 'tasca', 'liquidi', 'spiccioli', 'spicciolo'];
+            const paroleNecessita = ['spesa', 'affitto', 'bolletta', 'luce', 'gas', 'benzina', 'carburante', 'treno', 'medicina', 'dottore', 'supermercato', 'pranzo', 'cena', 'mangiare', 'netflix', 'spotify', 'abbonamento', 'palestra', 'necessità', 'necessita', 'mc'];
             const paroleRisparmi = ['risparmio', 'investimento', 'crypto', 'azioni', 'salvadanaio', 'fondo', 'messo via', 'risparmi'];
-            const paroleUsciteGrandi = ['bici', 'bicicletta', 'ruota', 'manubrio', 'cambio', 'pezzi', 'desiderio', 'acquisto grande', 'straordinaria', 'straordinario', 'pc', 'computer', 'motore', 'grande'];
+            const paroleUsciteGrandi = ['bici', 'bicicletta', 'ruota', 'manubrio', 'cambio', 'pezzi', 'desiderio', 'acquisto grande', 'straordinaria', 'straordinario', 'pc', 'computer', 'motore', 'grande', 'uscita grande'];
+
+            if (parolePortafoglio.some(p => testoMinuscolo.includes(p))) {
+                destinazioneIA = "portafoglio";
+            }
 
             if (paroleEntrate.some(p => testoMinuscolo.includes(p))) {
                 tipo = "entrata";
             } else if (paroleUsciteGrandi.some(p => testoMinuscolo.includes(p))) {
-                categoria = "uscita grande"; 
+                // REGOLA NUOVA: Solo se l'importo è di almeno 50 euro va nelle Uscite Grandi
+                if (importo >= 50) {
+                    categoria = "uscita grande"; 
+                    destinazioneIA = "budget"; 
+                } else {
+                    // Se costa meno di 50€, controlla se è una necessità (es. pezzi di ricambio necessari) o svago
+                    if (paroleNecessita.some(p => testoMinuscolo.includes(p)) || testoMinuscolo.includes('bici') || testoMinuscolo.includes('pezzi')) {
+                        categoria = "necessità";
+                    } else {
+                        categoria = "svago";
+                    }
+                }
             } else if (paroleNecessita.some(p => testoMinuscolo.includes(p))) {
                 categoria = "necessità";
             } else if (paroleRisparmi.some(p => testoMinuscolo.includes(p))) {
                 categoria = "risparmi";
+                destinazioneIA = "budget"; 
             }
 
-            let descrizione = testo.replace(numeri[0], '').replace('euro', '').replace('€', '').trim();
-            if(descrizione.length < 2) {
-                descrizione = tipo === 'entrata' ? "Entrata registrata" : "Spesa registrata";
-            }
+            let descrizione = testo.trim();
 
             dati.movimenti.push({
                 importo: importo,
                 tipo: tipo,
-                categoria: category = categoria,
+                categoria: categoria,
                 descrizione: descrizione,
+                destinazione: destinazioneIA,
                 data: new Date().toISOString()
             });
 
-            document.getElementById('input-siri').value = ""; 
+            inputElement.value = ""; 
             salvaDati();
+
+            const etichettaDest = destinazioneIA === 'budget' ? 'Budget' : 'Portafoglio';
+            const segnoNotifica = tipo === 'entrata' ? '+' : '-';
+            mostraNotificaConferma(`Segnato: ${segnoNotifica}€${importo.toFixed(2)} su ${etichettaDest}`, destinazioneIA);
+
+            parla(`Segnati ${importo} euro su ${etichettaDest}`);
         }
 
-        window.onload = caricaStato;
+        window.onload = inizializzaApp;
     </script>
 </body>
 </html>
